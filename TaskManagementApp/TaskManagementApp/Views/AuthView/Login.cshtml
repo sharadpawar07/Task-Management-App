@@ -1,0 +1,50 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+
+<h2>Login</h2>
+
+<div id="loginMessage" class="text-danger"></div>
+
+<form id="loginForm">
+    <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" class="form-control" required />
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+
+<a href="@Url.Action("Register", "AuthView")">New user? Register here</a>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    
+    $(document).ready(function () {
+        $("#loginForm").submit(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                    url: "/api/auth/login",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        Email: $("#email").val(),
+                        Password: $("#password").val()
+                    }),
+                    success: function (response) {
+                    localStorage.setItem("token",response.token);
+                    window.location.href = response.redirectUrl;
+                },
+                    error: function (xhr) {
+                        $("#loginMessage").text(xhr.responseJSON?.message || "Invalid credentials");
+                    }
+              });
+        });
+    });
+
+</script>

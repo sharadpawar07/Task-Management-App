@@ -1,0 +1,127 @@
+﻿@{
+    ViewData["Title"] = "Edit Task";
+}
+
+<h2>Edit Task</h2>
+
+<form id="editTaskForm">
+    <input type="hidden" id="TaskId" />
+
+    <div class="form-group">
+        <label for="Title" class="form-label">Title</label>
+        <input id="Title" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label for="Description" class="form-label">Description</label>
+        <textarea id="Description" class="form-control" required></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="DueDate" class="form-label">Due Date</label>
+        <input id="DueDate" type="date" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label for="Status" class="form-label">Status</label>
+        <select id="Status" class="form-control">
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="AssignedUserId" class="form-label">Assigned User</label>
+        <select id="AssignedUserId" class="form-control">
+            <option value="">-- Select User --</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Changes</button>
+    <a href="@Url.Action("Index", "TaskView")" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+     
+
+        $(document).ready(function () {
+            var taskId = getTaskIdFromUrl();
+
+            function getTaskIdFromUrl() {
+                var pathArray = window.location.pathname.split('/');
+                var id = pathArray[pathArray.length - 1];
+                return isNaN(id) ? null : id;
+            }
+
+            if (!taskId) {
+                alert("Error: Task ID is missing from the URL!");
+                window.location.href = "/TaskView/Index";
+                return;
+            }
+
+            console.log("Task ID:", taskId);
+
+            
+            $.get(`/TaskView/Edit/${taskId}`, function (data) {
+                console.log("Task Data:", data);
+                $("#TaskId").val(data.taskId);
+                $("#Title").val(data.title);
+                $("#Description").val(data.description);
+                $("#DueDate").val(data.dueDate);
+                $("#Status").val(data.status);
+                $("#AssignedUserId").val(data.assignedUserId);
+            }).fail(function () {
+                alert("Error fetching task details.");
+            });
+
+                       $.get("/TaskView/GetUsers", function (users) {
+            console.log("API Response:", users);
+
+            let userList = users.$values || users;
+
+            if (Array.isArray(userList)) {
+                userList.forEach(function (user) {
+                    $("#AssignedUserId").append(new Option(user.fullName, user.userId));
+                });
+            } else {
+                console.error("Expected an array but got:", users);
+            }
+        });
+
+
+
+
+            $("#editTaskForm").submit(function (event) {
+                event.preventDefault();
+
+                var taskId = $("#TaskId").val();
+
+                var updatedTask = {
+                    "taskId": taskId,
+                    "title": $("#Title").val(),
+                    "description": $("#Description").val(),
+                    "dueDate": $("#DueDate").val(),
+                    "status": $("#Status").val(),
+                    "assignedUserId": $("#AssignedUserId").val()
+                };
+
+                $.ajax({
+                    url: `/TaskView/Edit/${taskId}`,
+                    type: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify(updatedTask),
+                    success: function () {
+                        alert("Task updated successfully!");
+                        window.location.href = "/TaskView/Index";
+                    },
+                    error: function () {
+                        alert("Error updating task.");
+                    }
+                });
+            });
+        });
+
+    </script>
+}

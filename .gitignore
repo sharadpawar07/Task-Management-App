@@ -1,0 +1,63 @@
+# Ignore Visual Studio user-specific files
+.vscode/
+.vs/
+*.user
+*.suo
+*.vcxproj.user
+*.csproj.user
+*.sln.docstates
+
+# Ignore build artifacts
+bin/
+obj/
+out/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+*.ilk
+*.exp
+*.idb
+*.lib
+*.nupkg
+*.snupkg
+
+# Ignore NuGet packages
+*.nupkg
+packages/
+!packages/repositories.config
+
+# Ignore logs, database, and temporary files
+*.log
+*.tlog
+*.cache
+*.dat
+*.db
+*.mdf
+*.ldf
+*.sqlite
+
+# Ignore ReSharper, Rider, and other IDE settings
+*.DotSettings
+.idea/
+*.sln.DotSettings.user
+
+
+# Ignore publish and deployment
+publish/
+PublishOutput/
+wwwroot/
+bower_components/
+dist/
+.env
+
+# Ignore dependencies
+
+bower_components/
+
+# Ignore Rider files
+.idea/
+
+# Ignore JetBrains Rider files
+.idea/

@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h2>Admin Dashboard</h2>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Total Tasks</h5>
+                <p class="card-text">@ViewData["TotalTasks"]</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Pending Tasks</h5>
+                <p class="card-text">@ViewData["PendingTasks"]</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-body">
+                <h5 class="card-title">In Progress Tasks</h5>
+                <p class="card-text">@ViewData["InProgressTasks"]</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Completed Tasks</h5>
+                <p class="card-text">@ViewData["CompletedTasks"]</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>Tasks Assigned to Users</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Task Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in ViewData["TasksByUser"] as IEnumerable<dynamic>)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.TaskCount</td>
+            </tr>
+        }
+
+    </tbody>
+
+
+</table>
+<a href="@Url.Action("Index", "TaskView")" class="btn btn-danger" style="float: left;">Task List</a>
+
