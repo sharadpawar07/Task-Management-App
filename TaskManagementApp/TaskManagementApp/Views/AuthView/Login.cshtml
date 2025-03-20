@@ -25,7 +25,8 @@
 <script>
     
     $(document).ready(function () {
-        $("#loginForm").submit(function (e) {
+
+          $("#loginForm").submit(function (e) {
             e.preventDefault();
 
             $.ajax({
@@ -38,6 +39,7 @@
                     }),
                     success: function (response) {
                     localStorage.setItem("token",response.token);
+                    localStorage.setItem("roleId",response.role);
                     window.location.href = response.redirectUrl;
                 },
                     error: function (xhr) {

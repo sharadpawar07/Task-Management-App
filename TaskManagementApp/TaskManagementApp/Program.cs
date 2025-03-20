@@ -63,15 +63,17 @@ app.UseStaticFiles();
 app.UseSession();
 app.UseRouting();
 
-app.UseCors("AllowAll"); 
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
 
-//app.UseAuthorization();
+
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=AuthView}/{action=Login}/{id?}"); 
+    pattern: "{controller=AuthView}/{action=Login}/{id?}");
 
 app.Run();
+
+

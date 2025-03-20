@@ -22,7 +22,7 @@ namespace TaskManagementApp.Controllers
                 return RedirectToAction("Login", "AuthView");
             }
 
-            
+           
             var totalTasks = _context.Tasks.Count();
             var pendingTasks = _context.Tasks.Count(t => t.Status == "Pending");
             var inProgressTasks = _context.Tasks.Count(t => t.Status == "In Progress");

@@ -1,0 +1,97 @@
+﻿@{
+    ViewData["Title"] = "Create Task";
+}
+
+<h2>Create Task</h2>
+
+<form id="createTaskForm">
+    <div class="form-group">
+        <label for="Title">Title</label>
+        <input type="text" id="Title" name="Title" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <label for="Description">Description</label>
+        <textarea id="Description" name="Description" class="form-control"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="DueDate">Due Date</label>
+        <input type="date" id="DueDate" name="DueDate" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="Status">Status</label>
+        <select id="Status" name="Status" class="form-control">
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="AssignedUserId">Assign To</label>
+        <select id="AssignedUserId" name="AssignedUserId" class="form-control"></select>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Task</button>
+</form>
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+             var roleId = localStorage.getItem("roleId");
+
+                if (roleId != 1) {
+                   document.location.href="/TaskView/Index";
+            }
+            else
+            {
+                 $("#create-new-task").hide();
+            }
+
+        
+
+            $.get("/TaskView/GetUsers", function (users) {
+                console.log("API Response:", users);
+
+
+                let userList = users.$values || users;
+
+                if (Array.isArray(userList)) {
+                    $("#AssignedUserId").empty().append('<option value="">-- Select User --</option>');
+                    userList.forEach(function (user) {
+                        $("#AssignedUserId").append(new Option(user.fullName, user.userId));
+                    });
+                } else {
+                    console.error("Expected an array but got:", users);
+                }
+            });
+
+        
+        $("#createTaskForm").submit(function (event) {
+            event.preventDefault();
+
+            var taskData = {
+                "title": $("#Title").val(),
+                "description": $("#Description").val(),
+                "dueDate": $("#DueDate").val(),
+                "status": $("#Status").val(),
+                "assignedUserId": $("#AssignedUserId").val()
+            };
+
+            $.ajax({
+                url: "/TaskView/Create",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(taskData),
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem("token")
+                },
+                success: function (response) {
+                    alert("Task created successfully!");
+                    window.location.href = "/TaskView/Index";
+                },
+                error: function (xhr) {
+                    alert("Error: " + xhr.responseText);
+                }
+            });
+        });
+    });
+</script>
+}

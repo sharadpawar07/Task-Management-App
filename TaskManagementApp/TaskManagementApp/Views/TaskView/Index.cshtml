@@ -1,21 +1,45 @@
 ﻿
+
 @{
     ViewData["Title"] = "Task List";
 }
 
 <h2>Task List</h2>
 
-
-    <a href="@Url.Action("Create", "TaskView")" class="btn btn-primary">Create New Task</a>
-
-
+<a href="@Url.Action("Create", "TaskView")" id="create-new-task" class="btn btn-primary">Create New Task</a>
 <a href="/" class="btn btn-danger" style="float: right;" id="logoutButton">Logout</a>
 
-<table class="table">
+
+<div class="row mt-3">
+    <div class="col-md-3">
+        <input type="text" id="searchTitle" class="form-control" placeholder="Search by Title">
+    </div>
+    <div class="col-md-3">
+        <select id="statusFilter" class="form-control">
+            <option value="">Filter by Status</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <input type="date" id="dueDateFilter" class="form-control">
+    </div>
+    <div class="col-md-3">
+        <select id="assignedUserFilter" class="form-control">
+            <option value="">Filter by Assigned User</option>
+        </select>
+    </div>
+</div>
+
+<button id="applyFilters" class="btn btn-success mt-2">Apply Filters</button>
+
+<table class="table mt-3">
     <thead>
         <tr>
             <th>Title</th>
             <th>Status</th>
+            <th>Due Date</th>
             <th>Assigned User</th>
             <th>Actions</th>
         </tr>
@@ -27,39 +51,92 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
+        var roleId = localStorage.getItem("roleId");
+        var token = localStorage.getItem("token");
 
-        function loadTasks() {
-            $.ajax({
-                url: "/api/task",
-                type: "GET",
-                dataType: "json",
-                headers: {
-                    "Authorization": "Bearer " + localStorage.getItem("token") 
-                },
-                success: function (data) {
-                    console.log(data); 
-                    $("#taskTableBody").empty();
-                    data.$values.forEach(function (task) {
-                        var row = `<tr>
-                                <td>${task.title}</td>
-                                <td>${task.status}</td>
-                                <td>${task.assignedUser}</td>
-                                <td>
-                                    <a href="/TaskView/Details/${task.taskId}">Details</a> |
-                                    <a href="/TaskView/Edit/${task.taskId}">Edit</a> |
-                                    ${task.roleId == 1 ? `<a href="#" class="deleteTask" data-id="${task.taskId}">Delete</a>` : ''}
-                                </td>
-                            </tr>`;
-                        $("#taskTableBody").append(row);
-                    });
-                },
-                error: function () {
-                    alert("Error fetching tasks.");
-                }
-            });
+        if (!token) {
+            document.location.href = "/";
         }
 
-        loadTasks(); 
+        if (roleId == 1) {
+            $("#create-new-task").show();
+        } else {
+            $("#create-new-task").hide();
+        }
+        
+       
+
+        if (roleId != 1) {
+        $("#assignedUserFilter").parent().hide(); 
+    }
+
+   
+    function loadUsers() {
+        $.ajax({
+            url: "/TaskView/GetUsers",
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                if (Array.isArray(data)) {
+                    $("#assignedUserFilter").empty().append('<option value="">Filter by Assigned User</option>');
+
+                    data.forEach(user => {
+                        $("#assignedUserFilter").append(
+                            `<option value="${user.userId}">${user.fullName}</option>` // Corrected casing
+                        );
+                    });
+                } else {
+                    console.error("Unexpected data format:", data);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching users:", error);
+            }
+        });
+    }
+
+
+        function loadTasks() {
+        var searchTitle = $("#searchTitle").val().trim() || null;
+        var statusFilter = $("#statusFilter").val() || null;
+        var dueDateFilter = $("#dueDateFilter").val() || null;
+        var assignedUserFilter = $("#assignedUserFilter").val() || null;
+
+        $.ajax({
+            url: "/api/task",
+            type: "GET",
+            dataType: "json",
+            headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+            data: { searchTitle, statusFilter, dueDateFilter, assignedUserFilter },
+            success: function (data) {
+                $("#taskTableBody").empty();
+                data.$values.forEach(function (task) {
+                    var row = `<tr>
+                            <td>${task.title}</td>
+                            <td>${task.status}</td>
+                            <td>${task.dueDate || "N/A"}</td>
+                            <td>${task.assignedUser}</td>
+                            <td>
+                                <a href="/TaskView/Details/${task.taskId}">Details</a> |
+                                <a href="/TaskView/Edit/${task.taskId}">Edit</a> |
+                                ${roleId == 1 ? `<a href="#" class="deleteTask" data-id="${task.taskId}">Delete</a>` : ''}
+                            </td>
+                        </tr>`;
+                    $("#taskTableBody").append(row);
+                });
+            },
+            error: function () {
+                alert("Error fetching tasks.");
+            }
+        });
+    }
+
+        loadUsers();
+        loadTasks();
+
+        $("#applyFilters").click(function () {
+            loadTasks();
+        });
 
         $(document).on("click", ".deleteTask", function (event) {
             event.preventDefault();
@@ -69,9 +146,7 @@
                 $.ajax({
                     url: "/api/task/" + taskId,
                     type: "DELETE",
-    headers: {
-                    "Authorization": "Bearer " + localStorage.getItem("token") 
-                },
+                    headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
                     success: function () {
                         alert("Task deleted successfully!");
                         loadTasks();

@@ -1,5 +1,9 @@
-﻿@{
+﻿
+
+@{
     ViewData["Title"] = "Edit Task";
+    var userRole = ViewData["UserRole"]?.ToString(); 
+    var isAdmin = userRole == "1"; 
 }
 
 <h2>Edit Task</h2>
@@ -9,17 +13,17 @@
 
     <div class="form-group">
         <label for="Title" class="form-label">Title</label>
-        <input id="Title" class="form-control" required />
+        <input id="Title" class="form-control" required @(isAdmin ? "" : "readonly") />
     </div>
 
     <div class="form-group">
         <label for="Description" class="form-label">Description</label>
-        <textarea id="Description" class="form-control" required></textarea>
+        <textarea id="Description" class="form-control" required @(isAdmin ? "" : "readonly")></textarea>
     </div>
 
     <div class="form-group">
         <label for="DueDate" class="form-label">Due Date</label>
-        <input id="DueDate" type="date" class="form-control" required />
+        <input id="DueDate" type="date" class="form-control" required @(isAdmin ? "" : "readonly") />
     </div>
 
     <div class="form-group">
@@ -33,7 +37,7 @@
 
     <div class="form-group">
         <label for="AssignedUserId" class="form-label">Assigned User</label>
-        <select id="AssignedUserId" class="form-control">
+        <select id="AssignedUserId" class="form-control" @(isAdmin ? "" : "disabled")>
             <option value="">-- Select User --</option>
         </select>
     </div>
@@ -44,11 +48,14 @@
 
 @section Scripts {
     <script>
-     
-
         $(document).ready(function () {
             var taskId = getTaskIdFromUrl();
-
+            var userRole = '@userRole';
+            var isAdmin = false;
+            if (userRole == "1") {
+                isAdmin =true;
+            }
+           
             function getTaskIdFromUrl() {
                 var pathArray = window.location.pathname.split('/');
                 var id = pathArray[pathArray.length - 1];
@@ -63,7 +70,7 @@
 
             console.log("Task ID:", taskId);
 
-            
+           
             $.get(`/TaskView/Edit/${taskId}`, function (data) {
                 console.log("Task Data:", data);
                 $("#TaskId").val(data.taskId);
@@ -72,16 +79,24 @@
                 $("#DueDate").val(data.dueDate);
                 $("#Status").val(data.status);
                 $("#AssignedUserId").val(data.assignedUserId);
+
+                
+                if (!isAdmin) {
+                    $("#Title, #Description, #DueDate, #AssignedUserId").prop("disabled", true);
+                }
             }).fail(function () {
                 alert("Error fetching task details.");
             });
 
+            
                        $.get("/TaskView/GetUsers", function (users) {
             console.log("API Response:", users);
 
+           
             let userList = users.$values || users;
 
             if (Array.isArray(userList)) {
+                $("#AssignedUserId").empty().append('<option value="">-- Select User --</option>');
                 userList.forEach(function (user) {
                     $("#AssignedUserId").append(new Option(user.fullName, user.userId));
                 });
@@ -91,11 +106,8 @@
         });
 
 
-
-
-            $("#editTaskForm").submit(function (event) {
+               $("#editTaskForm").submit(function (event) {
                 event.preventDefault();
-
                 var taskId = $("#TaskId").val();
 
                 var updatedTask = {
@@ -122,6 +134,5 @@
                 });
             });
         });
-
     </script>
 }

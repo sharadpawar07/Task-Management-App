@@ -4,7 +4,6 @@ using NuGet.Protocol.Plugins;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TaskManagementApp.Models;

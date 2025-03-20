@@ -22,11 +22,37 @@ namespace TaskManagementApp.ApiControllers
             _context = context;
         }
 
-        [HttpGet("task")]
-        public async Task<IActionResult> GetTasks()
+
+
+        [HttpPost("task")]
+        public async Task<IActionResult> CreateTask([FromBody] TaskEntity newTask)
         {
-            
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); 
+            if (newTask == null || string.IsNullOrWhiteSpace(newTask.Title))
+            {
+                return BadRequest(new { message = "Invalid task data." });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User is not authenticated." });
+            }
+
+            newTask.CreatedDate = DateTime.Now;
+            newTask.UpdatedDate = DateTime.Now;
+            newTask.CreatedBy = Convert.ToInt32(userId);
+            newTask.AssignedUserId = newTask.AssignedUserId != 0 ? newTask.AssignedUserId : newTask.CreatedBy;
+
+            _context.Tasks.Add(newTask);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetTaskById), new { id = newTask.TaskId }, new { message = "Task created successfully!", task = newTask });
+        }
+
+        [HttpGet("task")]
+        public async Task<IActionResult> GetTasks(string? searchTitle, string? statusFilter, DateTime? dueDateFilter, int? assignedUserFilter)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = Convert.ToInt32(User.FindFirstValue(ClaimTypes.Role));
 
             if (userId == null)
@@ -34,42 +60,43 @@ namespace TaskManagementApp.ApiControllers
                 return Unauthorized("User is not authenticated.");
             }
 
-            
+            var tasksQuery = _context.Tasks.Include(t => t.AssignedUser).AsQueryable();
 
-            if (userRole == 1)
+           
+            if (!string.IsNullOrEmpty(searchTitle))
             {
-                var tasks = await _context.Tasks
-                    .Include(t => t.AssignedUser)
-                    .Select(t => new
-                    {
-                        t.TaskId,
-                        t.Title,
-                        t.Status,
-                        AssignedUser = t.AssignedUser != null ? t.AssignedUser.FullName : "Unassigned",
-                        RoleId = userRole
-                    })
-                    .ToListAsync();
-
-                return Ok(tasks);
-
+                tasksQuery = tasksQuery.Where(t => t.Title.Contains(searchTitle));
             }
-            else
+
+            if (!string.IsNullOrEmpty(statusFilter))
             {
-                var tasks = await _context.Tasks
-                .Where(t => t.AssignedUserId == Convert.ToInt32(userId))
-                .Include(t => t.AssignedUser)
-                .Select(t => new
-                {
-                    t.TaskId,
-                    t.Title,
-                    t.Status,
-                    AssignedUser = t.AssignedUser != null ? t.AssignedUser.FullName : "Unassigned",
-                    RoleId = userRole
-                })
-                .ToListAsync();
-                return Ok(tasks);
+                tasksQuery = tasksQuery.Where(t => t.Status == statusFilter);
             }
+
+            if (dueDateFilter.HasValue)
+            {
+                tasksQuery = tasksQuery.Where(t => t.DueDate.HasValue && t.DueDate.Value.Date == dueDateFilter.Value.Date);
+            }
+
+            if (userRole == 1 && assignedUserFilter.HasValue)
+            {
+                tasksQuery = tasksQuery.Where(t => t.AssignedUserId == assignedUserFilter);
+            }
+
+            var tasks = await tasksQuery.Select(t => new
+            {
+                t.TaskId,
+                t.Title,
+                t.Status,
+                DueDate = t.DueDate.HasValue ? t.DueDate.Value.ToString("yyyy-MM-dd") : null,
+                AssignedUser = t.AssignedUser != null ? t.AssignedUser.FullName : "Unassigned",
+                RoleId = userRole
+            }).ToListAsync();
+
+            return Ok(tasks);
         }
+
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(int id)
@@ -82,22 +109,7 @@ namespace TaskManagementApp.ApiControllers
             return Ok(task);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateTask([FromBody] TaskEntity newTask)
-        {
-            if (newTask == null)
-            {
-                return BadRequest("Invalid task data.");
-            }
-
-            newTask.CreatedDate = DateTime.Now;
-            newTask.UpdatedDate = DateTime.Now;
-
-            _context.Tasks.Add(newTask);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetTaskById), new { id = newTask.TaskId }, newTask);
-        }
-
+        
         [HttpPut("task/{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskEntity updatedTask)
         {
